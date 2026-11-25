@@ -113,8 +113,19 @@ def make_test_array_inner_axis(dtype):
 
 
 def test_array_inner_empty(test, device):
-    values = wp.array([], device=device, dtype=wp.vec2)
-    test.assertEqual(array_inner(values, values), 0.0)
+    for dtype, scalar_dtype in (
+        (wp.float32, np.float32),
+        (wp.float64, np.float64),
+        (wp.vec2, np.float32),
+        (wp.vec2d, np.float64),
+    ):
+        with test.subTest(dtype=dtype):
+            empty = wp.array([], device=device, dtype=dtype)
+            values = wp.zeros(3, device=device, dtype=dtype)
+            for result in (array_inner(empty, empty), array_inner(values, values, count=0)):
+                test.assertIsInstance(result, scalar_dtype)
+                test.assertEqual(result, 0.0)
+            test.assertIsInstance(array_inner(values, values), scalar_dtype)
 
     values = wp.array([], shape=(0, 3), device=device, dtype=float)
     assert_np_equal(array_inner(values, values, axis=0).numpy(), np.zeros((1, 3)))
