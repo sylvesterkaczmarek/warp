@@ -197,6 +197,15 @@ float_cmp_types = (float, float_base, np.floating)
 
 
 class int_base(scalar_base):
+    def __bool__(self) -> builtins.bool:
+        return int(self) != 0
+
+    def __float__(self) -> float:
+        return float(int(self))
+
+    def __int__(self) -> int:
+        return int(self._type_(int(self.value)).value)
+
     def __index__(self) -> int:
         return int(self._type_(self.value).value)
 

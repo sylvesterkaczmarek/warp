@@ -924,6 +924,29 @@ class TestTypes(unittest.TestCase):
         self.assertIn("vec2i", result)
         self.assertGreater(len(result), 0)
 
+    def test_integer_scalar_conversions_wrap_to_dtype(self):
+        for dtype in wp._src.types.int_types:
+            info = np.iinfo(dtype.__numpy_dtype__)
+            modulus = 1 << info.bits
+            for raw, expected in (
+                (info.max + 1, info.min),
+                (info.min - 1, info.max),
+                (modulus, 0),
+                (-modulus, 0),
+                (modulus + 1, 1),
+            ):
+                with self.subTest(dtype=dtype, raw=raw):
+                    value = dtype(raw)
+                    self.assertEqual(int(value), expected)
+                    self.assertEqual(float(value), float(expected))
+                    self.assertEqual(bool(value), bool(expected))
+                    self.assertEqual(str(value), str(expected))
+                    self.assertEqual(value.__index__(), expected)
+                    self.assertEqual(value, dtype(expected))
+                    self.assertEqual(value, expected)
+                    self.assertEqual(hash(value), hash(expected))
+                    self.assertEqual(len({value, dtype(expected), expected}), 1)
+
     def test_int_float_comparison(self):
         for int_type in wp._src.types.int_types:
             with self.subTest(int_type=int_type):
