@@ -289,6 +289,25 @@ def test_flatten(test, device):
     test.assertEqual(loss.numpy()[0], 36)
 
 
+def test_to_same_device_requires_grad(test, device):
+    """An explicit gradient flag applies even without a device transfer."""
+    for initial in (False, True):
+        src = wp.array([1.0, 2.0, 3.0], dtype=wp.float32, device=device, requires_grad=initial)
+        test.assertIs(src.to(device), src)
+        test.assertIs(src.to(device, requires_grad=initial), src)
+
+        result = src.to(device, requires_grad=not initial)
+        test.assertIsNot(result, src)
+        test.assertEqual(result.requires_grad, not initial)
+        test.assertEqual(result.grad is not None, not initial)
+        test.assertEqual(src.requires_grad, initial)
+        test.assertEqual(src.grad is not None, initial)
+        test.assertNotEqual(result.ptr, src.ptr)
+        np.testing.assert_array_equal(result.numpy(), [1.0, 2.0, 3.0])
+        result.fill_(7.0)
+        np.testing.assert_array_equal(src.numpy(), [1.0, 2.0, 3.0])
+
+
 def test_reshape(test, device):
     np_arr = np.arange(6, dtype=float)
     arr = wp.array(np_arr, dtype=float, device=device, requires_grad=True)
@@ -4975,6 +4994,7 @@ add_function_test(TestArray, "test_shape", test_shape, devices=devices)
 add_function_test(TestArray, "test_negative_shape", test_negative_shape, devices=devices)
 add_function_test(TestArray, "test_flatten", test_flatten, devices=devices)
 add_function_test(TestArray, "test_reshape", test_reshape, devices=devices)
+add_function_test(TestArray, "test_to_same_device_requires_grad", test_to_same_device_requires_grad, devices=devices)
 
 add_function_test(TestArray, "test_slicing", test_slicing, devices=devices)
 add_function_test(TestArray, "test_transpose", test_transpose, devices=devices)

@@ -5133,12 +5133,20 @@ class array(Array[DType, NDim]):
             return a.flatten().tolist()
 
     def to(self, device, requires_grad=None):
-        """Return a Warp array with this array's data moved to the specified device, no-op if already on device."""
+        """Return this array's data on the specified device.
+
+        Returns this array unchanged if the device and requested gradient-tracking
+        state already match. Otherwise returns a copy, without modifying the source.
+
+        Args:
+            device: The destination device.
+            requires_grad: Whether the result tracks gradients. If None, preserve
+                the source's gradient-tracking state.
+        """
         device = warp.get_device(device)
-        if self.device == device:
+        if self.device == device and (requires_grad is None or requires_grad == self.requires_grad):
             return self
-        else:
-            return warp.clone(self, device=device, requires_grad=requires_grad)
+        return warp.clone(self, device=device, requires_grad=requires_grad)
 
     def flatten(self):
         """Return a zero-copy view of the array collapsed to 1-D. Only supported for contiguous arrays."""
